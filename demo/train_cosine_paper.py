@@ -35,21 +35,23 @@ def main():
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"BASELINE Training on: {device}")
+    print(f"COSINE Training on: {device}")
 
     train_loader, test_loader = get_data_loaders(args.batch_size)
     net = VGG('VGG16').to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
-    scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[150, 250], gamma=0.1)
 
-    log_file = open("baseline_vgg_log.csv", "w", newline="")
+    # Sử dụng CosineAnnealingLR
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
+
+    log_file = open("cosine_vgg_log.csv", "w", newline="")
     writer = csv.writer(log_file)
     writer.writerow(["Time", "Step", "Epoch", "Train_Loss", "Val_Loss", "Val_Acc", "LR"])
     start_time_global = time.time()
     global_step = 0
 
-    print("Start Baseline Training...")
+    print("Start Cosine Training...")
     for epoch in range(1, args.epochs + 1):
         net.train()
         for batch_idx, (inputs, targets) in enumerate(train_loader):
