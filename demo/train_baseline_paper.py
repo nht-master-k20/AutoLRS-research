@@ -1,3 +1,13 @@
+import sys
+import os
+
+# --- [FIX PATH] ---
+current_dir = os.path.dirname(os.path.abspath(__file__))
+autolrs_path = os.path.abspath(os.path.join(current_dir, '../autolrs'))
+if autolrs_path not in sys.path:
+    sys.path.append(autolrs_path)
+# ------------------
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -8,9 +18,9 @@ import argparse
 import time
 import csv
 
-
+# ... (Phần còn lại của code giữ nguyên như cũ) ...
 def get_data_loaders(batch_size):
-    # (Giống hệt file trên để tiết kiệm chỗ, bạn copy hàm get_data_loaders vào đây nhé)
+    # Copy hàm get_data_loaders chuẩn vào đây
     print("Preparing CIFAR-10 dataset...")
     transform_train = transforms.Compose([
         transforms.RandomCrop(32, padding=4),
@@ -27,7 +37,6 @@ def get_data_loaders(batch_size):
     testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
     testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=8)
     return trainloader, testloader
-
 
 def main():
     parser = argparse.ArgumentParser()
@@ -89,7 +98,6 @@ def main():
         log_file.flush()
 
     log_file.close()
-
 
 if __name__ == '__main__':
     main()
