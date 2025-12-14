@@ -7,12 +7,12 @@ import argparse
 import time
 import csv
 
-# --- IMPORT TRỰC TIẾP (Folder demo đã chuẩn) ---
+# --- IMPORT TRỰC TIẾP ---
 from autolrs_callback import AutoLRS
 from models.vgg import VGG
 
 
-# -----------------------------------------------
+# ------------------------
 
 def get_data_loaders(batch_size):
     print("Preparing CIFAR-10 dataset...")
@@ -54,10 +54,13 @@ def main():
     start_time_global = time.time()
     global_step = 0
 
-    # Khởi tạo epoch = 0 để val_fn có thể truy cập ngay cả khi chưa vào loop
-    epoch = 0
+    # [FIX]: Dùng dictionary để lưu epoch, đảm bảo val_fn luôn thấy giá trị mới nhất
+    training_state = {'epoch': 0}
 
     def val_fn():
+        # Lấy epoch hiện tại từ dictionary
+        current_epoch = training_state['epoch']
+
         net.eval()
         total, correct, val_loss = 0, 0, 0
         with torch.no_grad():
@@ -74,8 +77,12 @@ def main():
         acc = 100. * correct / total
         avg_loss = val_loss / total
         cur_lr = optimizer.param_groups[0]['lr']
-        print(f"Epoch {epoch} | Acc: {acc:.2f}% | Loss: {avg_loss:.4f} | LR: {cur_lr:.6f}")
-        writer.writerow([time.time() - start_time_global, global_step, epoch, "", avg_loss, acc, cur_lr])
+
+        # [ĐÃ ĐỒNG BỘ]
+        print(f"Epoch {current_epoch} | Acc: {acc:.2f}% | Loss: {avg_loss:.4f} | LR: {cur_lr:.6f}")
+
+        # Ghi log với current_epoch chuẩn xác
+        writer.writerow([time.time() - start_time_global, global_step, current_epoch, "", avg_loss, acc, cur_lr])
         log_file.flush()
         return avg_loss
 
@@ -83,6 +90,9 @@ def main():
 
     print("Start Training...")
     for epoch in range(1, args.epochs + 1):
+        # [FIX]: Cập nhật epoch vào dictionary
+        training_state['epoch'] = epoch
+
         net.train()
         for batch_idx, (inputs, targets) in enumerate(train_loader):
             inputs, targets = inputs.to(device), targets.to(device)

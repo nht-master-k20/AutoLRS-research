@@ -35,24 +35,21 @@ def main():
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"COSINE Training on: {device}")
+    print(f"BASELINE Training on: {device}")
 
     train_loader, test_loader = get_data_loaders(args.batch_size)
     net = VGG('VGG16').to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
+    scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[150, 250], gamma=0.1)
 
-    # [THAY ĐỔI DUY NHẤT VỀ THUẬT TOÁN]: Dùng CosineAnnealingLR thay vì MultiStepLR
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
-
-    # [THAY ĐỔI TÊN FILE LOG]: Để không ghi đè lên file baseline
-    log_file = open("cosine_vgg_log.csv", "w", newline="")
+    log_file = open("baseline_vgg_log.csv", "w", newline="")
     writer = csv.writer(log_file)
     writer.writerow(["Time", "Step", "Epoch", "Train_Loss", "Val_Loss", "Val_Acc", "LR"])
     start_time_global = time.time()
     global_step = 0
 
-    print("Start Cosine Training...")
+    print("Start Baseline Training...")
     for epoch in range(1, args.epochs + 1):
         net.train()
         for batch_idx, (inputs, targets) in enumerate(train_loader):
@@ -80,10 +77,14 @@ def main():
                 _, predicted = outputs.max(1)
                 total += targets.size(0)
                 correct += predicted.eq(targets).sum().item()
+
         acc = 100. * correct / total
         avg_loss = val_loss / total
         cur_lr = optimizer.param_groups[0]['lr']
+
+        # [ĐÃ ĐỒNG BỘ]
         print(f"Epoch {epoch} | Acc: {acc:.2f}% | Loss: {avg_loss:.4f} | LR: {cur_lr:.6f}")
+
         writer.writerow([time.time() - start_time_global, global_step, epoch, "", avg_loss, acc, cur_lr])
         log_file.flush()
     log_file.close()
