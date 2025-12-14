@@ -74,11 +74,7 @@ def main():
         acc = 100. * correct / total
         avg_loss = val_loss / total
         cur_lr = optimizer.param_groups[0]['lr']
-
-        # [FORMAT GIỐNG BASELINE/COSINE]
         print(f"Epoch {epoch} | Acc: {acc:.2f}% | Loss: {avg_loss:.4f} | LR: {cur_lr:.6f}")
-
-        # Ghi log: Dùng epoch hiện tại để vẽ biểu đồ cho khớp
         writer.writerow([time.time() - start_time_global, global_step, epoch, "", avg_loss, acc, cur_lr])
         log_file.flush()
         return avg_loss

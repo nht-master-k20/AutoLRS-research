@@ -83,8 +83,7 @@ def main():
         acc = 100. * correct / total
         avg_loss = val_loss / total
         cur_lr = optimizer.param_groups[0]['lr']
-
-        print(f"Epoch {epoch} | Acc: {acc:.2f}% | Loss: {avg_loss:.4f}")
+        print(f"Epoch {epoch} | Acc: {acc:.2f}% | Loss: {avg_loss:.4f} | LR: {cur_lr:.6f}")
         writer.writerow([time.time() - start_time_global, global_step, epoch, "", avg_loss, acc, cur_lr])
         log_file.flush()
     log_file.close()
