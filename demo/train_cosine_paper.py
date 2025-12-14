@@ -41,8 +41,11 @@ def main():
     net = VGG('VGG16').to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
+
+    # [THAY ĐỔI DUY NHẤT VỀ THUẬT TOÁN]: Dùng CosineAnnealingLR thay vì MultiStepLR
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
 
+    # [THAY ĐỔI TÊN FILE LOG]: Để không ghi đè lên file baseline
     log_file = open("cosine_vgg_log.csv", "w", newline="")
     writer = csv.writer(log_file)
     writer.writerow(["Time", "Step", "Epoch", "Train_Loss", "Val_Loss", "Val_Acc", "LR"])
@@ -60,19 +63,12 @@ def main():
             loss.backward()
             optimizer.step()
             global_step += 1
-
-            # Ghi log CSV
             if global_step % 20 == 0:
                 cur_lr = optimizer.param_groups[0]['lr']
                 writer.writerow([time.time() - start_time_global, global_step, epoch, loss.item(), "", "", cur_lr])
 
-            # [THÊM MỚI] In ra màn hình mỗi 100 batch để theo dõi Training Loss
-            if batch_idx % 100 == 0:
-                print(f"Epoch {epoch} [{batch_idx}/{len(train_loader)}] Train Loss: {loss.item():.4f}")
-
         scheduler.step()
 
-        # Validation
         net.eval()
         total, correct, val_loss = 0, 0, 0
         with torch.no_grad():
@@ -84,16 +80,13 @@ def main():
                 _, predicted = outputs.max(1)
                 total += targets.size(0)
                 correct += predicted.eq(targets).sum().item()
-
         acc = 100. * correct / total
         avg_loss = val_loss / total
         cur_lr = optimizer.param_groups[0]['lr']
 
-        print(f"Epoch {epoch} | Acc: {acc:.2f}% | Val Loss: {avg_loss:.4f} | LR: {cur_lr:.6f}")
-
+        print(f"Epoch {epoch} | Acc: {acc:.2f}% | Loss: {avg_loss:.4f}")
         writer.writerow([time.time() - start_time_global, global_step, epoch, "", avg_loss, acc, cur_lr])
         log_file.flush()
-
     log_file.close()
 
 
