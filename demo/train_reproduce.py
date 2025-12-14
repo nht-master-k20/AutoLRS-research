@@ -7,10 +7,12 @@ import argparse
 import time
 import csv
 
-# --- IMPORT TRỰC TIẾP ---
+# --- IMPORT TRỰC TIẾP (Folder demo đã chuẩn) ---
 from autolrs_callback import AutoLRS
 from models.vgg import VGG
-# ------------------------
+
+
+# -----------------------------------------------
 
 def get_data_loaders(batch_size):
     print("Preparing CIFAR-10 dataset...")
@@ -29,6 +31,7 @@ def get_data_loaders(batch_size):
     testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
     testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=8)
     return trainloader, testloader
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -51,6 +54,9 @@ def main():
     start_time_global = time.time()
     global_step = 0
 
+    # Khởi tạo epoch = 0 để val_fn có thể truy cập ngay cả khi chưa vào loop
+    epoch = 0
+
     def val_fn():
         net.eval()
         total, correct, val_loss = 0, 0, 0
@@ -64,11 +70,16 @@ def main():
                 total += targets.size(0)
                 correct += predicted.eq(targets).sum().item()
         net.train()
+
         acc = 100. * correct / total
         avg_loss = val_loss / total
         cur_lr = optimizer.param_groups[0]['lr']
-        print(f" >> [VAL] Acc: {acc:.2f}% | Loss: {avg_loss:.4f} | LR: {cur_lr:.6f}")
-        writer.writerow([time.time() - start_time_global, global_step, 0, "", avg_loss, acc, cur_lr])
+
+        # [FORMAT GIỐNG BASELINE/COSINE]
+        print(f"Epoch {epoch} | Acc: {acc:.2f}% | Loss: {avg_loss:.4f} | LR: {cur_lr:.6f}")
+
+        # Ghi log: Dùng epoch hiện tại để vẽ biểu đồ cho khớp
+        writer.writerow([time.time() - start_time_global, global_step, epoch, "", avg_loss, acc, cur_lr])
         log_file.flush()
         return avg_loss
 
@@ -84,13 +95,19 @@ def main():
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
+
+            # Gửi loss cho AutoLRS Server
             autolrs.on_train_batch_end(loss.item())
+
             global_step += 1
             if global_step % 20 == 0:
                 cur_lr = optimizer.param_groups[0]['lr']
                 writer.writerow([time.time() - start_time_global, global_step, epoch, loss.item(), "", "", cur_lr])
-        print(f"--- Epoch {epoch} Done ---")
+
+        # Validation cuối mỗi epoch
         val_fn()
+
     log_file.close()
+
 
 if __name__ == '__main__': main()
