@@ -8,6 +8,7 @@ import time
 import csv
 from models.vgg import VGG
 
+
 def get_data_loaders(batch_size):
     print("Preparing CIFAR-10 dataset...")
     transform_train = transforms.Compose([
@@ -25,6 +26,7 @@ def get_data_loaders(batch_size):
     testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
     testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=8)
     return trainloader, testloader
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -58,10 +60,19 @@ def main():
             loss.backward()
             optimizer.step()
             global_step += 1
+
+            # Ghi log CSV
             if global_step % 20 == 0:
                 cur_lr = optimizer.param_groups[0]['lr']
                 writer.writerow([time.time() - start_time_global, global_step, epoch, loss.item(), "", "", cur_lr])
+
+            # [THÊM MỚI] In ra màn hình mỗi 100 batch để theo dõi Training Loss
+            if batch_idx % 100 == 0:
+                print(f"Epoch {epoch} [{batch_idx}/{len(train_loader)}] Train Loss: {loss.item():.4f}")
+
         scheduler.step()
+
+        # Validation
         net.eval()
         total, correct, val_loss = 0, 0, 0
         with torch.no_grad():
@@ -73,12 +84,17 @@ def main():
                 _, predicted = outputs.max(1)
                 total += targets.size(0)
                 correct += predicted.eq(targets).sum().item()
+
         acc = 100. * correct / total
         avg_loss = val_loss / total
         cur_lr = optimizer.param_groups[0]['lr']
-        print(f"Epoch {epoch} | Acc: {acc:.2f}%")
+
+        print(f"Epoch {epoch} | Acc: {acc:.2f}% | Val Loss: {avg_loss:.4f} | LR: {cur_lr:.6f}")
+
         writer.writerow([time.time() - start_time_global, global_step, epoch, "", avg_loss, acc, cur_lr])
         log_file.flush()
+
     log_file.close()
+
 
 if __name__ == '__main__': main()
