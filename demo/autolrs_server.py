@@ -16,17 +16,16 @@ import socket
 import numpy as np
 import threading
 import math
-import os
+import logging
 from skopt import Optimizer
 from skopt.space import Real
 from scipy.interpolate import UnivariateSpline
 from scipy import optimize
-import logging
 
 logging.basicConfig(level=logging.INFO)
 
 
-# --- Helper functions (Fix lỗi dfitpack crash) ---
+# --- Helper functions ---
 def f(b, x, y):
     A = np.vstack([np.exp(-np.exp(b) * x), np.ones(len(x))]).T
     result = np.linalg.lstsq(A, y, rcond=None)
@@ -113,12 +112,10 @@ class RingBuffer:
 
 class Controller(object):
     def __init__(self, host, port, min_lr, max_lr):
-        # --- CẤU HÌNH CHUẨN PAPER ---
-        self.INITIAL_EXPLOITATION_STEP = 1000  #
-        self.INITIAL_LR_STEPS = 100  #
-        self.TAU_MAX = 8000  # [cite: 260]
-        LR_TO_EXPLORE = 10  # [cite: 259]
-
+        self.INITIAL_EXPLOITATION_STEP = 1000
+        self.INITIAL_LR_STEPS = 100
+        self.TAU_MAX = 8000
+        LR_TO_EXPLORE = 10
         self.min_lr = float(min_lr)
         self.max_lr = float(max_lr)
         self.host = host
@@ -129,17 +126,13 @@ class Controller(object):
         self.sock = socket.socket()
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind((self.host, self.port))
-
         self.global_step = 0
         self.loss_vector = []
         self.lr = 0
-
-        # Init Curriculum
         self.exploitation_step = self.INITIAL_EXPLOITATION_STEP
         self.lr_steps = self.INITIAL_LR_STEPS
         self.ring_buffer_len = self.lr_steps
         self.lr_to_explore = LR_TO_EXPLORE
-
         self.val_freq = max(1, int(self.lr_steps / 16))
         self.lr_counter = 0
         self.BO_stage = True
@@ -149,13 +142,11 @@ class Controller(object):
         self.loss_after_exploitation = None
         self.average_loss = 0.0
         self.init_loss = 0.0
-
         self.ring_loss_buffer = RingBuffer(self.ring_buffer_len)
         self.opt = None
         self.x_func_dict = dict()
         self.x_iters = []
         self.func_val_iters = []
-
         self.num_ranks = 0
         self.finished_minions = 0
         self.lock1 = threading.Lock()
@@ -216,27 +207,22 @@ class Controller(object):
                     self.loss_after_exploitation = self.average_loss
                     self.init_loss = self.average_loss
 
-                # --- LOGIC EXPLOITATION & CURRICULUM ---
                 if self.exploitation_flag:
                     if self.exploitation_counter == self.exploitation_step:
                         self.BO_stage = True
                         self.exploitation_flag = False
                         self.exploitation_counter = 0
                         logging.info('[Server] Exploitation Done. Reconfiguring...')
-
-                        # [IMPLEMENT PAPER LOGIC: Double tau until tau_max]
                         if self.exploitation_step < self.TAU_MAX:
                             self.exploitation_step *= 2
                             self.lr_steps *= 2
                             self.ring_buffer_len = self.lr_steps
                             logging.info(f'>>> CURRICULUM LEVEL UP: New tau={self.exploitation_step}')
-
                         self.val_freq = max(1, int(self.lr_steps / 16))
                         if self.val_stage:
                             self.ring_loss_buffer = RingBuffer(self.ring_buffer_len // self.val_freq)
                         else:
                             self.ring_loss_buffer = RingBuffer(self.ring_buffer_len)
-
                         self.loss_after_exploitation = self.average_loss
                         self.message = 'save'
                         c.send(self.message.encode('utf-8'))
@@ -249,7 +235,6 @@ class Controller(object):
                         event.set()
                         continue
 
-                # --- LOGIC BO ---
                 if self.BO_stage:
                     self.opt = Optimizer([Real(self.min_lr, self.max_lr, 'log-uniform')], "GP",
                                          n_initial_points=1, acq_func='LCB', acq_func_kwargs={'kappa': 1000})
@@ -270,26 +255,21 @@ class Controller(object):
                         predicted_loss = self.ring_loss_buffer.exponential_forcast(
                             pred_index=int(self.exploitation_step / self.val_freq), is_training=False)
                     else:
-                        predicted_loss = self.ring_loss_buffer.exponential_forcast(
-                            pred_index=self.exploitation_step, is_training=True)
-
+                        predicted_loss = self.ring_loss_buffer.exponential_forcast(pred_index=self.exploitation_step,
+                                                                                   is_training=True)
                     logging.info(f'[Server] LR {self.lr:.6f} -> Pred Loss: {predicted_loss}')
-
                     if str(predicted_loss) == 'nan':
                         self.opt.tell([float(self.lr)], 1e6)
                     else:
                         self.opt.tell([float(self.lr)], predicted_loss)
-
                     self.x_iters.append(float(self.lr))
                     self.func_val_iters.append(predicted_loss)
                     self.x_func_dict[self.lr] = predicted_loss
                     self.lr_counter = 1
-
                     if self.val_stage:
                         self.ring_loss_buffer = RingBuffer(int(math.floor(self.ring_buffer_len) / self.val_freq))
                     else:
                         self.ring_loss_buffer = RingBuffer(self.ring_buffer_len)
-
                     if len(self.func_val_iters) == self.lr_to_explore:
                         best_idx = self.func_val_iters.index(min(self.func_val_iters))
                         self.lr = self.x_iters[best_idx]
@@ -314,7 +294,6 @@ class Controller(object):
                         self.message = str(self.lr)
                     c.send(self.message.encode('utf-8'))
                     event.set()
-
         except Exception:
             traceback.print_exc()
             try:

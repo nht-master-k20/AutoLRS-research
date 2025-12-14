@@ -3,12 +3,14 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision
 import torchvision.transforms as transforms
-from autolrs_callback import AutoLRS
-from models.vgg import VGG
 import argparse
 import time
 import csv
 
+# --- IMPORT TRỰC TIẾP ---
+from autolrs_callback import AutoLRS
+from models.vgg import VGG
+# ------------------------
 
 def get_data_loaders(batch_size):
     print("Preparing CIFAR-10 dataset...")
@@ -28,12 +30,11 @@ def get_data_loaders(batch_size):
     testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=8)
     return trainloader, testloader
 
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--port', type=int, default=12315)
-    parser.add_argument('--epochs', type=int, default=350)  # Paper dùng 350 epochs
-    parser.add_argument('--batch-size', type=int, default=128)  # Paper dùng batch 128
+    parser.add_argument('--epochs', type=int, default=350)
+    parser.add_argument('--batch-size', type=int, default=128)
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -44,7 +45,6 @@ def main():
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
 
-    # [LOGGING] Format chuẩn cho cả Figure 1 và 2
     log_file = open("reproduce_vgg_log.csv", "w", newline="")
     writer = csv.writer(log_file)
     writer.writerow(["Time", "Step", "Epoch", "Train_Loss", "Val_Loss", "Val_Acc", "LR"])
@@ -64,13 +64,10 @@ def main():
                 total += targets.size(0)
                 correct += predicted.eq(targets).sum().item()
         net.train()
-
         acc = 100. * correct / total
         avg_loss = val_loss / total
         cur_lr = optimizer.param_groups[0]['lr']
-
         print(f" >> [VAL] Acc: {acc:.2f}% | Loss: {avg_loss:.4f} | LR: {cur_lr:.6f}")
-        # Ghi log Validation (Train_Loss để trống)
         writer.writerow([time.time() - start_time_global, global_step, 0, "", avg_loss, acc, cur_lr])
         log_file.flush()
         return avg_loss
@@ -87,21 +84,13 @@ def main():
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
-
             autolrs.on_train_batch_end(loss.item())
             global_step += 1
-
-            # [FIGURE 2] Ghi Training Loss mỗi 20 bước
             if global_step % 20 == 0:
                 cur_lr = optimizer.param_groups[0]['lr']
                 writer.writerow([time.time() - start_time_global, global_step, epoch, loss.item(), "", "", cur_lr])
-
         print(f"--- Epoch {epoch} Done ---")
-        # Cuối mỗi epoch gọi val_fn để check accuracy (Figure 1)
         val_fn()
-
     log_file.close()
 
-
-if __name__ == '__main__':
-    main()
+if __name__ == '__main__': main()

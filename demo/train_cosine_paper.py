@@ -1,24 +1,13 @@
-import sys
-import os
-
-# --- [FIX PATH] ---
-current_dir = os.path.dirname(os.path.abspath(__file__))
-autolrs_path = os.path.abspath(os.path.join(current_dir, '../autolrs'))
-if autolrs_path not in sys.path:
-    sys.path.append(autolrs_path)
-# ------------------
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchvision
 import torchvision.transforms as transforms
-from models.vgg import VGG
 import argparse
 import time
 import csv
+from models.vgg import VGG
 
-# ... (Phần còn lại giữ nguyên code cũ) ...
 def get_data_loaders(batch_size):
     print("Preparing CIFAR-10 dataset...")
     transform_train = transforms.Compose([
@@ -68,15 +57,11 @@ def main():
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
-
             global_step += 1
             if global_step % 20 == 0:
                 cur_lr = optimizer.param_groups[0]['lr']
                 writer.writerow([time.time() - start_time_global, global_step, epoch, loss.item(), "", "", cur_lr])
-
         scheduler.step()
-
-        # Validation
         net.eval()
         total, correct, val_loss = 0, 0, 0
         with torch.no_grad():
@@ -88,15 +73,12 @@ def main():
                 _, predicted = outputs.max(1)
                 total += targets.size(0)
                 correct += predicted.eq(targets).sum().item()
-
         acc = 100. * correct / total
         avg_loss = val_loss / total
         cur_lr = optimizer.param_groups[0]['lr']
         print(f"Epoch {epoch} | Acc: {acc:.2f}%")
         writer.writerow([time.time() - start_time_global, global_step, epoch, "", avg_loss, acc, cur_lr])
         log_file.flush()
-
     log_file.close()
 
-if __name__ == '__main__':
-    main()
+if __name__ == '__main__': main()
