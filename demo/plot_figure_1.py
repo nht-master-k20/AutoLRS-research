@@ -94,7 +94,7 @@ def plot_learning_rate(dfs):
     plt.figure(figsize=(16, 9))
     for name, df in dfs.items():
         # AutoLRS có LR dao động mạnh, làm mượt sẽ dễ nhìn xu hướng hơn
-        df['LR_Smooth'] = df['LR'].rolling(window=SMOOTH_WINDOW, min_periods=1).mean()
+        df['LR_Smooth'] = df['LR'].rolling(window=1, min_periods=1).mean()
 
         sns.lineplot(
             data=df, x="Epoch", y="LR_Smooth",
