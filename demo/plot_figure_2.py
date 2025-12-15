@@ -43,7 +43,7 @@ def plot_figure_2():
     plt.xlabel("Training Steps", fontsize=14)
 
     # --- CẤU HÌNH KHUNG HÌNH (QUAN TRỌNG ĐỂ THẤY MŨI TÊN) ---
-    plt.ylim(0, 1.5)  # Mở rộng trục Y lên 1.5 để mũi tên không bị cắt
+    plt.ylim(0, 2)  # Mở rộng trục Y lên 1.5 để mũi tên không bị cắt
     plt.xlim(left=0)  # Bắt buộc trục X bắt đầu từ 0
 
     # --- HIGHLIGHT 1: FAST CONVERGENCE (ĐOẠN ĐẦU) ---
