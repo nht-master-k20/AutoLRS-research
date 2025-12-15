@@ -49,8 +49,8 @@ def plot_figure_2():
     # --- HIGHLIGHT 1: FAST CONVERGENCE (ĐOẠN ĐẦU) ---
     # Mũi tên chỉ vào Step 5000, Loss ~1.0
     plt.annotate('Fast Drop\n(Speed)',
-                 xy=(5000, 0.8),  # Điểm mũi tên chỉ vào (Thấp xuống xíu cho dễ trúng đường đỏ)
-                 xytext=(20000, 1.2),  # Vị trí đặt chữ
+                 xy=(20000, 1.2),  # Điểm mũi tên chỉ vào (Thấp xuống xíu cho dễ trúng đường đỏ)
+                 xytext=(30000, 1.5),  # Vị trí đặt chữ
                  arrowprops=dict(facecolor='#d62728', shrink=0.05, width=2),
                  fontsize=12, fontweight='bold', color='#d62728',
                  bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="#d62728", alpha=0.9))
@@ -62,7 +62,7 @@ def plot_figure_2():
 
     plt.annotate('Active Exploration\n(Higher Noise)',
                  xy=(target_step, 0.2),  # Điểm chỉ vào (Loss thấp ~0.2)
-                 xytext=(target_step - 40000, 0.5),  # Chữ đặt cao hơn và lùi về trái
+                 xytext=(target_step - 20000, 0.5),  # Chữ đặt cao hơn và lùi về trái
                  arrowprops=dict(facecolor='black', arrowstyle="->", lw=2),
                  fontsize=12, fontweight='bold', color='black',
                  bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black", alpha=0.9))
