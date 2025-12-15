@@ -13,7 +13,7 @@ def plot_figure_2():
     colors = {"AutoLRS": "#d62728", "Baseline": "#7f7f7f", "Cosine": "#2ca02c"}
 
     # Tăng độ làm mượt để hình đẹp hơn
-    SMOOTH_WINDOW = 100
+    SMOOTH_WINDOW = 1000
 
     sns.set_theme(style="whitegrid", context="paper", font_scale=1.5)
     plt.figure(figsize=(12, 8))
@@ -35,7 +35,7 @@ def plot_figure_2():
                 print(f"Lỗi file {name}: {e}")
 
     plt.title("Training Loss Convergence", fontweight='bold', fontsize=18)
-    plt.ylabel("Training Loss (Smoothed)", fontsize=14)
+    plt.ylabel("Training Loss", fontsize=14)
     plt.xlabel("Training Steps", fontsize=14)
 
     # Giới hạn trục Y để tập trung vào vùng hội tụ (Bỏ qua đoạn loss nổ ban đầu)
@@ -43,7 +43,7 @@ def plot_figure_2():
 
     plt.legend(fontsize=14)
     plt.tight_layout()
-    plt.savefig("figure_2_reproduce.png", dpi=300)
+    plt.savefig("plot_training_loss.png", dpi=300)
     print("✅ Đã tạo Figure 2: figure_2_reproduce.png")
 
 
