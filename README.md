@@ -101,15 +101,15 @@ Kết quả sẽ được lưu tại:
 
 ### Validation Accuracy
 
-![Validation Accuracy](plot_accuracy.png)
+![Validation Accuracy](demo/plot_accuracy.png)
 
 ### Learning Rate Schedule
 
-![Learning Rate](plot_learning_rate.png)
+![Learning Rate](demo/plot_learning_rate.png)
 
 ### Training Loss
 
-![Training Loss](plot_training_loss.png)
+![Training Loss](demo/plot_training_loss.png)
 
 ## File Log
 
